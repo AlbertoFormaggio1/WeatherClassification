@@ -15,63 +15,26 @@ from pathlib import Path
 # Get the processor associated with the weights we're going to use
 checkpoint = "google/vit-base-patch16-224-in21k"
 image_processor = AutoImageProcessor.from_pretrained(checkpoint)
+BATCH_SIZE = 16
 
-ds_mwd = data_import.get_ds('MWD', image_processor, None)
-print(ds_mwd)
-ds_acdc = data_import.get_ds('ACDC', image_processor, None)
-print(ds_acdc)
-
-labels_mwd = ds_mwd['train'].features['label'].names
-labels_acdc = ds_acdc['train'].features['label'].names
-label2id_mwd = {c: i for i, c in enumerate(labels_mwd)}
-label2id_acdc = {c: i for i, c in enumerate(labels_acdc)}
-
-labels = np.array(['clear', 'fog', 'night', 'rain', 'snow', 'sunrise'])
-label_ass_acdc = {}
-for l in labels_acdc:
-    ind = np.where(labels == l)
-    label_ass_acdc[str(label2id_acdc[l])] = str(ind[0][0])
-
-label_ass_mwd = {}
-ass_lab_mwd = {'shine': 'clear', 'cloudy': 'fog', 'rain': 'rain', 'sunrise': 'sunrise'}
-for l in labels_mwd:
-    true_l = ass_lab_mwd[l]
-    ind = np.where(labels == true_l)
-    label_ass_mwd[str(label2id_mwd[l])] = str(ind[0][0])
-
-features = ds_acdc['train'].features.copy()
-del features['label']
-features['label'] = ClassLabel(names=labels.tolist())
-features['pixel_values'] = Sequence(feature=Sequence(feature=Sequence(feature=Value(dtype='float32', id=None), length=-1, id=None), length=-1, id=None), length=-1, id=None)
-def change_label(x, label_ass):
-    x['label'] = int(label_ass[str(x['label'])])
-    return x
-
-ds_mwd = ds_mwd.map(change_label, fn_kwargs={'label_ass': label_ass_mwd}, num_proc=16, features=features)
-ds_mwd = ds_mwd.remove_columns('image')
-ds_mwd['train'] = ds_mwd['train'].add_column('ds_name', ['mwd'] * len(ds_mwd['train']))
-ds_mwd['eval'] = ds_mwd['eval'].add_column('ds_name', ['mwd'] * len(ds_mwd['eval']))
-
-ds_acdc = ds_acdc.map(change_label, fn_kwargs={'label_ass': label_ass_acdc}, num_proc=16, features=features)
-ds_acdc = ds_acdc.remove_columns('image')
-ds_acdc['train'] = ds_acdc['train'].add_column('ds_name', ['acdc'] * len(ds_acdc['train']))
-ds_acdc['eval'] = ds_acdc['eval'].add_column('ds_name', ['acdc'] * len(ds_acdc['eval']))
+ds_mwd = data_import.get_ds(Path('./MWD'))
+ds_acdc = data_import.get_ds(Path('./ACDC'))
 
 
-print(ds_acdc['train'].features)
+datasets = np.array([ds_mwd, ds_acdc])
 
-prepared_ds = DatasetDict(
-    {'train': concatenate_datasets([ds_mwd['train'], ds_acdc['train']]),
-     'eval': concatenate_datasets([ds_mwd['eval'], ds_acdc['eval']]),
-     }
-)
+final_labels = np.array(['clear', 'fog', 'night', 'rain', 'snow', 'sunrise'])
+datasets, ass_ds_final = data_import.map_labels(datasets, image_processor, final_labels, BATCH_SIZE, None)
 
-prepared_ds['train'] = prepared_ds['train'].shuffle()
+weights = data_import.compute_weights(datasets)
 
-print(prepared_ds['train'])
+dataloaders = data_import.gen_dataloader(datasets, image_processor, weights, ass_ds_final, BATCH_SIZE, None)
+print(dataloaders)
+
 data_collator = DefaultDataCollator()
 # import the metric we're going to use
 accuracy = evaluate.load("accuracy")
+
 
 # Create a function to compute the metric we decided to use
 def compute_metrics(eval_pred):
@@ -80,7 +43,7 @@ def compute_metrics(eval_pred):
     return accuracy.compute(predictions=predictions, references=labels)
 
 
-labels = ds_mwd['train'].features['label'].names
+labels = final_labels
 
 model = AutoModelForImageClassification.from_pretrained(
     checkpoint,
@@ -117,8 +80,8 @@ trainer = Trainer(
     model=model,
     args=training_args,
     data_collator=data_collator,
-    train_dataset=prepared_ds["train"],
-    eval_dataset=prepared_ds["eval"],
+    train_dataset=dataloaders["train"],
+    eval_dataset=dataloaders["eval"],
     tokenizer=image_processor,
     compute_metrics=compute_metrics,
 )
@@ -135,11 +98,6 @@ trainer.log_metrics("eval", metrics)
 trainer.save_metrics("eval", metrics)
 
 trainer.push_to_hub()
-
-
-
-
-
 
 """
 class MyDataset(torch.utils.data.Dataset):
