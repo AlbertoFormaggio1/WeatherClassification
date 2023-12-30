@@ -16,15 +16,19 @@ from torch.utils.tensorboard import SummaryWriter
 import utils
 import argparse
 import datetime
-from torchvision.models import resnet50, ResNet50_Weights
+import warnings
+warnings.filterwarnings("ignore")
 
 parser = argparse.ArgumentParser()
 # These arguments will be set appropriately by ReCodEx, even if you change them.
 parser.add_argument("--batch_size", default=16, type=int, help="Batch size.")
 parser.add_argument('--epochs', default=1, type=int, help="Epochs.")
 parser.add_argument('--augmentation', default='base', choices=["base", 'geometric_simple', 'geometric_simple_v', 'gaussian', 'laplacian'], type=str, help="Augmentation type to adopt")
-parser.add_argument('--model_name', default='vit', choices=['vit', 'rn50', 'mobv2'], type=str, help="model to use in the current run")
-parser.add_argument('--ds_names', default=['MWD', 'ACDC', 'UAVid', 'syndrone'])
+parser.add_argument('--model_name', default='mobv2', choices=['vit', 'rn50', 'mobv2'], type=str, help="model to use in the current run")
+parser.add_argument('--ds_names', default=['MWD', 'ACDC', 'UAVid', 'syndrone'], type=str, help='datasets to use during training')
+parser.add_argument('--learning_rate', default=5e-5, type=float, help="Learning rate.")
+parser.add_argument('--ds_weight', default=1, type=float, help='Importance to the data in a minority dataset. Handles dataset imbalance.')
+parser.add_argument('--class_weight', default=1, type=float, help='Importance to the data in a minority class. Handles class imbalance.')
 
 def main(args: argparse.Namespace):
     args.logdir = os.path.join("logs", "{}-{}-{}".format(
@@ -48,6 +52,7 @@ def main(args: argparse.Namespace):
     model = AutoModelForImageClassification.from_pretrained(
         checkpoint,
         num_labels=len(final_labels),
+        ignore_mismatched_sizes=True,
     )
 
     datasets = []
@@ -60,7 +65,7 @@ def main(args: argparse.Namespace):
 
     datasets, ass_ds_final = data_import.map_labels(datasets, final_labels)
 
-    weights = data_import.compute_weights(datasets)
+    weights = data_import.compute_weights(datasets, args.ds_weight, args.class_weight)
 
     dataloaders = data_import.gen_dataloader(datasets, image_processor, weights, ass_ds_final, args.batch_size, args.augmentation)
 
@@ -91,7 +96,7 @@ def main(args: argparse.Namespace):
     writer.flush()
     writer.close()
 
-    torch.save(model, args.logdir)
+    torch.save(model, f'{args.logdir}/model.pth')
 
 
 if __name__ == "__main__":

@@ -56,9 +56,9 @@ def map_labels(datasets: List[dict], final_labels: List[str]):
     return datasets, inverse_ass
 
 
-def compute_weights(datasets):
+def compute_weights(datasets, ds_weight, class_weight):
     len_train = [1 / float(len(ds['train'])) for ds in datasets]
-    weights = torch.tensor(len_train, dtype=torch.float32)
+    weights = torch.tensor(ds_weight * len_train, dtype=torch.float32)
 
     weights_ds = []
     for ds, w in zip(datasets, weights):
@@ -73,7 +73,7 @@ def compute_weights(datasets):
     for t, wds in zip(targ, weights_ds):
         t = torch.tensor(t)
         for c, wc in zip(classes, inv_class_sum):
-            wds[(t == c).nonzero()] *= wc
+            wds[(t == c).nonzero()] += class_weight * wc
 
     full_w = torch.tensor([])
     for w in weights_ds:
