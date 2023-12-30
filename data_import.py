@@ -11,7 +11,7 @@ import numpy as np
 
 NUM_WORKERS = os.cpu_count()
 
-def map_labels(datasets: List[dict], image_processor: AutoImageProcessor, final_labels: List[str], batch_size: int, aug_type: str = None):
+def map_labels(datasets: List[dict], final_labels: List[str]):
     labels_ds = []
     label2id_ds = []
     label_ass_ds = []
@@ -87,12 +87,9 @@ def gen_dataloader(datasets, image_processor, weights, ass_ds_final, batch_size,
     dataloaders = {}
 
     ds_to_merge = [ds['train'] for ds in datasets]
-    print(ds_to_merge)
     merged_train_ds = torch.utils.data.ConcatDataset(ds_to_merge)
-    print(np.arange(len(merged_train_ds)))
 
     generator = torch.Generator().manual_seed(42)
-    #train_idx, eval_idx, _, _ = train_test_split(np.arange(len(merged_train_ds)), np.arange(len(merged_train_ds)), test_size=0.2, shuffle=True)
     merged_train_ds, merged_eval_ds = torch.utils.data.random_split(merged_train_ds, [0.8, 0.2], generator=generator)
     weights_train, weights_eval = torch.utils.data.random_split(weights, [0.8, 0.2], generator=generator)
     pre_train_ds = image_preprocessing(merged_train_ds, image_processor, aug_type, 'train')
