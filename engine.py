@@ -90,6 +90,23 @@ def test(model: torch.nn.Module, dataloader: DataLoader, loss_fn: torch.nn.Modul
 
     return res
 
+def do_inference(model: torch.nn.Module, dataloader: DataLoader, device: torch.device, label_mapping):
+    model.eval()
+    model = model.to(device)
+    full_preds = torch.tensor([])
+    full_preds = full_preds.to(device)
+    with torch.no_grad():
+        for X, y in dataloader:
+            X = X.to(device)
+            logits = model(X).logits
+            preds = torch.argmax(torch.softmax(logits, dim=1), dim=1)
+
+            for l in label_mapping:
+                preds[l] = label_mapping[l]
+            full_preds = torch.cat([full_preds, preds])
+
+    return full_preds.to('cpu')
+
 
 def test_step(model: torch.nn.Module,
               dataloader: DataLoader,

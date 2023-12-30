@@ -1,11 +1,8 @@
 import os
-from datasets import DatasetDict, ClassLabel, Sequence, Value, concatenate_datasets
 import torch
-import matplotlib.pyplot as plt
 import numpy as np
-from transformers import DefaultDataCollator
 import evaluate
-from transformers import AutoModelForImageClassification, TrainingArguments, Trainer
+from transformers import AutoModelForImageClassification
 from torchsummary import summary
 from transformers import AutoImageProcessor
 import data_import
@@ -85,13 +82,18 @@ def main(args: argparse.Namespace):
 
     results = engine.train(model, dataloaders['train'], dataloaders['eval'], opt, loss_fn, args.epochs, device, clf_metrics, writer)
 
-    for test_ds in dataloaders['test']:
+    for name, ds in dataloaders['test'].items():
         print('==========================================================')
-        print('Results for dataset', test_ds['name'])
-        res = engine.test(model, dataloaders['eval'], loss_fn, device, clf_metrics)
+        print('Results for dataset', name)
+        print(len(ds['ds']))
+        res = engine.test(model, ds['ds'], loss_fn, device, clf_metrics)
         for k, v in res.items():
             writer.add_scalar(f'{k}/test', v)
         print(res)
+
+    # To do inference you can run the following line:
+    results = engine.do_inference(model, dataloaders['test']['MWD']['ds'], device, dataloaders['test']['MWD']['ass'])
+    print(results)
 
     writer.flush()
     writer.close()

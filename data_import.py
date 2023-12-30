@@ -29,8 +29,6 @@ def map_labels(datasets: List[dict], final_labels: List[str]):
         else:
             ass_ds_final.append({'clear': 'clear', 'fog': 'fog', 'rain': 'rain', 'night': 'night'}) # Uav and syndrone
 
-
-
     # Get the index in the final_labels array corresponding to the label in the current dataset
     for idx, l_ds in enumerate(labels_ds):
         label_ass_ds.append({})
@@ -40,7 +38,6 @@ def map_labels(datasets: List[dict], final_labels: List[str]):
             label_ass_ds[-1][label2id_ds[idx][label]] = ind[0][0]
 
         inverse_ass.append({v: k for k, v in label_ass_ds[-1].items()})
-
 
     # replace the old label with the new one
     for idx, ds in enumerate(datasets):
@@ -106,7 +103,7 @@ def gen_dataloader(datasets, image_processor, weights, ass_ds_final, batch_size,
 
     dataloaders['train'] = train_dataloader
     dataloaders['eval'] = eval_dataloader
-    dataloaders['test'] = []
+    dataloaders['test'] = {}
 
     for idx, ds in enumerate(datasets):
         pre_test_ds = image_preprocessing(ds['test'], image_processor, aug_type, 'eval')
@@ -114,7 +111,7 @@ def gen_dataloader(datasets, image_processor, weights, ass_ds_final, batch_size,
         test_dataloader = DataLoader(pre_test_ds, batch_size=batch_size, num_workers=NUM_WORKERS, shuffle=False,
                                      drop_last=True)
 
-        dataloaders['test'].append({'ds': test_dataloader, 'name': ds['name'], 'ass': ass_ds_final[idx]})
+        dataloaders['test'][str(ds['name'])] = {'ds': test_dataloader, 'ass': ass_ds_final[idx]}
 
     return dataloaders
 
