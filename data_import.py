@@ -139,12 +139,9 @@ def gen_dataloader(datasets, image_processor, weights, ass_ds_final, batch_size,
 
     # Define a generator (setting the random seed for reproducibility of the results
     generator = torch.Generator().manual_seed(42)
-    # Split in the same way samples and weigths (important that the manual seed is the same, otherwise the weights
+    # Split in the same way samples and weights (important that the manual seed is the same, otherwise the weights
     # wouldn't be mapped to the correct samples anymore)
     indices_train, indices_eval = train_test_split(range(len(merged_train_ds)), test_size=0.2, train_size=0.8, random_state=42)
-
-    #merged_train_ds, merged_eval_ds = torch.utils.data.random_split(merged_train_ds, [0.8, 0.2], generator=generator)
-    #weights_train, weights_eval = torch.utils.data.random_split(weights, [0.8, 0.2], generator=generator)
 
     # Preprocessing of training and test data
     pre_train_ds = image_preprocessing(merged_train_ds, image_processor, aug_type, 'train', indices_train)
@@ -173,9 +170,6 @@ def create_test_dataloader(datasets, image_processor, batch_size, ass_ds_final):
     dataloaders = {}
     for idx, ds in enumerate(datasets):
         pre_test_ds = image_preprocessing(ds['test'], image_processor, None, 'test', None)
-
-        #if idx == 0:
-            #print(pre_test_ds)
 
         test_dataloader = DataLoader(pre_test_ds, batch_size=batch_size, num_workers=NUM_WORKERS, shuffle=False,
                                      drop_last=False)
@@ -270,8 +264,6 @@ def image_train_preprocessing(train_ds: torchvision.datasets.ImageFolder, crop_s
 
 
     targets = np.concatenate([x.targets for x in train_ds.datasets])
-    #print('targets')
-    #print(targets.tolist())
     train_ds = MyDataset(train_ds, indices, targets[indices], transform=_train_transform)
 
     return train_ds
@@ -280,10 +272,7 @@ def image_train_preprocessing(train_ds: torchvision.datasets.ImageFolder, crop_s
 def image_eval_preprocessing(eval_ds: torchvision.datasets.ImageFolder, size, crop_size, normalize, indices):
     _eval_transforms = v2.Compose([v2.Resize(size), v2.CenterCrop(crop_size), v2.ToTensor(), normalize])
 
-    #print(indices)
     targets = np.concatenate([x.targets for x in eval_ds.datasets])
-    #print('targets')
-    #print(targets.tolist())
     new_eval_ds = MyDataset(eval_ds, indices, targets[indices], transform=_eval_transforms)
 
     return new_eval_ds
