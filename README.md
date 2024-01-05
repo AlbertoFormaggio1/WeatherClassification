@@ -13,7 +13,8 @@ Different techniques for data augmentation were used to test whether it were pos
 git clone https://github.com/AlbertoFormaggio1/WeatherClassification.git
 ```
 2. Download the datasets from the link reported in the assignment pdf
-3. For each dataset that doesn't have a folder for each class inside ```train``` and ```test``` run the following (from inside the train folder):
+3. Download the folder at the following link containing the best models if you want to test them: https://drive.google.com/file/d/17mnNzI9UR8P-wMP6tZV8Fi-Ijp_KiGmP/view?usp=sharing and extract it.
+4. For each dataset that doesn't have a folder for each class inside ```train``` and ```test``` run the following (from inside the train/test folder):
 ```
 mkdir clear
 mkdir night
