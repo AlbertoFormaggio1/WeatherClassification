@@ -118,6 +118,7 @@ tensorboard --logdir logs
 
 Now, by opening a browser and digiting *localhost:6006* in the address bar you can see my results under the "Scalars" section (you can find it at the top left of the screen).
 
+*Note*: the logs of all the runs are not reported in their entirety. Some were removed during the experimenting before thinking about adding them to the GitHub repository, re-training the networks from scratch would have been too expensive. Still, many of them are still present.
 
 ## Important Note
 If you want to change the datasets used for training the models, please remember to change the list at the beginning of trainer.py and inference.py with the labels used by the datasets.
