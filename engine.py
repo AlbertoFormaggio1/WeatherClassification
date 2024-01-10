@@ -5,6 +5,7 @@ from tqdm.auto import tqdm
 from torch.utils.tensorboard import SummaryWriter
 from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay
 
+
 def train(model: torch.nn.Module,
           train_dataloader: torch.utils.data.DataLoader,
           test_dataloader: torch.utils.data.DataLoader,
@@ -13,6 +14,7 @@ def train(model: torch.nn.Module,
           epochs: int,
           device: torch.device,
           metrics: dict,
+          freeze_epochs: int,
           writer: SummaryWriter,
           model_name: str,
           logdir: str,
@@ -64,7 +66,7 @@ def train(model: torch.nn.Module,
                 for param in child.parameters():
                     param.requires_grad = False
                 break
-        elif epoch == 15:
+        elif epoch == freeze_epochs:
             for child in model.children():
                 for param in child.parameters():
                     param.requires_grad = True
@@ -89,6 +91,8 @@ def train(model: torch.nn.Module,
 
         # Take the sceduler to the next step
         if lr_schedule is not None:
+            # The parameter is needed for LRReduceOnPlateau. Ignored
+            # in the case of cosine annealing.
             lr_schedule.step(test_res['accuracy'])
 
         # Print out what's happening
