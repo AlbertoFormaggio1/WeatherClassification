@@ -16,9 +16,10 @@ warnings.filterwarnings("ignore")
 
 parser = argparse.ArgumentParser()
 # These arguments will be set appropriately by ReCodEx, even if you change them.
+parser.add_argument('--freeze_epochs', default=15, type=int, help="Epochs to freeze the network and train only the MLP.")
 parser.add_argument("--batch_size", default=16, type=int, help="Batch size.")
 parser.add_argument('--epochs', default=30, type=int, help="Epochs.")
-parser.add_argument('--augmentation', default='base', choices=["base", 'geometric_simple', 'geometric_simple_v', 'gaussian', 'sharpener'], type=str, help="Augmentation type to adopt")
+parser.add_argument('--augmentation', default='base', choices=["base", 'geometric_simple', 'geometric_simple_v', 'gaussian', 'sharpener', 'none'], type=str, help="Augmentation type to adopt")
 parser.add_argument('--model_name', default='mob', choices=['vit', 'rn50', 'mob'], type=str, help="model to use in the current run")
 parser.add_argument('--ds_names', default=['MWD', 'ACDC', 'UAVid', 'syndrone'], type=str, help='datasets to use during training')
 parser.add_argument('--learning_rate', default=5e-5, type=float, help="Learning rate.")
@@ -78,7 +79,7 @@ def main(args: argparse.Namespace):
     # Generate the weighted dataloaders and perform the augmentation
     dataloaders = data_import.gen_dataloader(datasets, image_processor, weights, ass_ds_final, args.batch_size, args.augmentation)
 
-    #summary(model, depth=6, col_names=['input_size', 'output_size', 'num_params'], input_data=(3, 224, 224))
+    summary(model, depth=6, col_names=['input_size', 'output_size', 'num_params'], input_data=(3, 224, 224))
 
     # Set the model to a GPU
     model = model.to(device)
@@ -90,8 +91,8 @@ def main(args: argparse.Namespace):
     if args.scheduler == 'plateau':
         lr_schedule = torch.optim.lr_scheduler.ReduceLROnPlateau(opt, mode='max', factor=0.1, patience=5, threshold=0.08, verbose=True)
     elif args.scheduler == 'cosine':
-        steps = args.epochs * (np.ceil(len(dataloaders['train']) / float(args.batch_size)))
-        lr_schedule = torch.optim.lr_scheduler.CosineAnnealingLR(opt, steps, eta_min=1e-7)
+        steps = args.epochs     # We decrease the learning rate after each epoch
+        lr_schedule = torch.optim.lr_scheduler.CosineAnnealingLR(opt, steps, eta_min=1e-6)   # The minimum learning rate achievable is 1e-6
     else:
         lr_schedule = None
 
@@ -105,7 +106,7 @@ def main(args: argparse.Namespace):
                    'accuracy': evaluate.load("accuracy")}
 
     # Train the model
-    results = engine.train(model, dataloaders['train'], dataloaders['eval'], opt, loss_fn, args.epochs, device, clf_metrics, writer, args.model_name, args.logdir, lr_schedule)
+    results = engine.train(model, dataloaders['train'], dataloaders['eval'], opt, loss_fn, args.epochs, device, clf_metrics, args.freeze_epochs, writer, args.model_name, args.logdir, lr_schedule)
 
     # To do inference you can run the following line:
     # results = engine.do_inference(model, dataloaders['test']['MWD']['ds'], device, dataloaders['test']['MWD']['ass'])
@@ -114,8 +115,7 @@ def main(args: argparse.Namespace):
     for name, ds in dataloaders['test'].items():
         print('==========================================================')
         print('Results for dataset', name)
-        print(ds)
-        print(len(ds['ds']))
+        print('Number of pattern is: ', len(ds['ds']))
         res, _, _ = engine.test_single_ds(model, ds['ds'], device, clf_metrics, ds['ass'], len(final_labels))
         for k, v in res.items():
             writer.add_scalar(f'{args.model_name}/{name}/{k}/test', v, 1)
