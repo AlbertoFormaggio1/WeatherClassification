@@ -12,6 +12,7 @@ from sklearn.model_selection import train_test_split
 
 NUM_WORKERS = os.cpu_count()
 
+
 def map_labels(datasets: List[dict], final_labels: List[str]):
     """
     Maps the label from the original datasets to the label used for training the model, associating the similar labels with one another
@@ -27,7 +28,6 @@ def map_labels(datasets: List[dict], final_labels: List[str]):
     for ds in datasets:
         labels_ds.append(ds['classes'])     # Save the labels of the current dataset
         label2id_ds.append({c: i for i, c in enumerate(labels_ds[-1])})     # Save the mapping label to id (i.e. "sunrise" -> 3)
-        print(label2id_ds)
 
         # Append the mapping from the dataset labeling to the "generalized" labeling used for the model
         if 'shine' in labels_ds[-1]:
@@ -227,7 +227,7 @@ def image_preprocessing(ds, image_processor: AutoImageProcessor, aug_type: str, 
 def image_train_preprocessing(train_ds: torchvision.datasets.ImageFolder, crop_size: Tuple[int],
                               normalize: v2.Normalize, aug_type: str, indices):
     # define the transform based on the desired augmentation method
-    if aug_type == None or aug_type == 'base':
+    if aug_type == 'base':
         _train_transform = v2.Compose([v2.RandomResizedCrop(crop_size),
                                        v2.RandomHorizontalFlip(),
                                        v2.ToTensor(),
@@ -261,6 +261,10 @@ def image_train_preprocessing(train_ds: torchvision.datasets.ImageFolder, crop_s
                                        v2.RandomAdjustSharpness(sharpness_factor=np.random.uniform(1,3, 1)),
                                        v2.ToTensor(),
                                        normalize])
+    elif aug_type == 'none':
+        _train_transform = v2.Compose([v2.Resize(crop_size),
+                                       v2.ToTensor(),
+                                       normalize])
 
 
     targets = np.concatenate([x.targets for x in train_ds.datasets])
@@ -276,6 +280,7 @@ def image_eval_preprocessing(eval_ds: torchvision.datasets.ImageFolder, size, cr
     new_eval_ds = MyDataset(eval_ds, indices, targets[indices], transform=_eval_transforms)
 
     return new_eval_ds
+
 
 def image_test_preprocessing(test_ds: torchvision.datasets.ImageFolder, size, crop_size, normalize):
     _test_transforms = v2.Compose([v2.Resize(size), v2.CenterCrop(crop_size), v2.ToTensor(), normalize])
