@@ -109,6 +109,13 @@ There are also 2, non executable files:
 - engine.py: contains the methods for running training and inference.
 - data_import.py: contains the methods for appropriately importing the data and create a single, merged, dataset
 
+This part was done mainly in PyTorch to acquire more expertise with the framework as it is very helpful and required in real-life.
+I also wanted to test myself a bit on something that was strictly related to OpenCV by using the histograms:
+You can launch trainer_hist.py to train the MLP defined in model_mlp.py. The histograms are generated inside an ad-hoc created dataset of pytorch inside the file load_ds_histogram.py
+
+I would have explored this histogram part further but having 4 projects it was tough since the first part on the CNNs took me a whole week. I tried to start with HuggingFace but its flexibility was too low and I lost much
+time on that before switching to vanilla pytorch.
+
 ### For seeing the results of my trainings:
 I used tensorboard to keep track of the results of my runs and finding out the best model.
 After installing tensorboard, from the folder of this repository run
