@@ -109,6 +109,8 @@ There are also 2, non executable files:
 - engine.py: contains the methods for running training and inference.
 - data_import.py: contains the methods for appropriately importing the data and create a single, merged, dataset
 
+### For the tutor
+
 This part was done mainly in PyTorch to acquire more expertise with the framework as it is very helpful and required in real-life.
 I also wanted to test myself a bit on something that was strictly related to OpenCV by using the histograms:
 You can launch trainer_hist.py to train the MLP defined in model_mlp.py. The histograms are generated inside an ad-hoc created dataset of pytorch inside the file load_ds_histogram.py
