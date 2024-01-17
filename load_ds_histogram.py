@@ -41,9 +41,9 @@ class HistogramDataset(torchvision.datasets.ImageFolder):
         im_nonoise = cv2.GaussianBlur(im, (3, 3), 1)
         if(self.pre_proc_type == 'lab' or self.pre_proc_type=='rgb'):
             if(self.pre_proc_type == 'lab'):
-                prep_image = (im_nonoise * 1. / 255).astype(np.float32)
-                im_lab = cv2.cvtColor(prep_image, cv2.COLOR_BGR2LAB)
-            hist = calc_hists(im_lab, self.pre_proc_type)
+                im_nonoise = (im_nonoise * 1. / 255).astype(np.float32)
+                im_nonoise = cv2.cvtColor(im_nonoise, cv2.COLOR_BGR2LAB)
+            hist = calc_hists(im_nonoise, self.pre_proc_type)
 
             # Setting up a matrix
             hist = np.stack([h for h in hist], axis=-1)
