@@ -24,7 +24,7 @@ parser.add_argument('--learning_rate', default=0.1, type=float, help="Learning r
 parser.add_argument('--label_smoothing', default=0.1, type=float, help='Label smoothing.')
 parser.add_argument('--preproc_type', default='lab', type=str, choices=['lab', 'rgb'], help='Type of preprocessing')
 parser.add_argument('--hidden_size', default=32, type=int, help='Number of hidden neurons in the MLP')
-parser.add_argument('--only_inference', default=True, type=bool, help='Number of hidden neurons in the MLP')
+parser.add_argument('--only_inference', default=False, type=bool, help='Number of hidden neurons in the MLP')
 
 def main(args: argparse.Namespace):
     args.logdir = os.path.join("logs", "{}-{}-{}".format(
@@ -43,6 +43,7 @@ def main(args: argparse.Namespace):
     train_dataloader, test_dataloader, classes = load_ds_histogram.create_dataloaders(train_path, test_path, args.batch_size, args.preproc_type)
 
     mlp = model_mlp.MLP(16 * 3, args.hidden_size, len(classes))
+    mlp = mlp.to(device)
 
     loss_fn = nn.CrossEntropyLoss(label_smoothing=args.label_smoothing)
     optimizer = torch.optim.SGD(mlp.parameters(), lr=args.learning_rate)
@@ -60,6 +61,7 @@ def main(args: argparse.Namespace):
         engine.train(mlp, train_dataloader, test_dataloader, optimizer, loss_fn, args.epochs, device, clf_metrics, 0, writer, 'mlp',args.logdir)
 
     mlp.load_state_dict(torch.load(str(f'{args.logdir}/model.pth')))
+    mlp = mlp.to(device)
 
     # Now test on UAVid
     data_path = Path('UAVid')
