@@ -36,7 +36,7 @@ mv night_* night
 mv fog_* fog
 
 # For Syndrone
-mv *Noon* clear
+mv *ClearNoon* clear
 mv *Rain* rain
 mv *Night* night
 mv *Foggy* fog
