@@ -5,6 +5,7 @@ Classifying weather images is a relevant task when considering applications like
 Relying on humans for this task can be inconsitent and lead to inaccurate results and relying on the weather forecast is not reliable as well and can't provide results in real time.
 In this work, we exploited the power of Transfer Learning applied to Convolutional Neural Networks (CNNs) and a Visual Transformer to infer a model that is robust and can be applied in multiple applications: from images taken from the windshield of a car to aerial images shot by flying drones.
 Different techniques for data augmentation were used to test whether it were possible to increase the robustness of the models by modifying the input data.
+We also trained a linear model to see if it were possible to get a better generalization over images belonging to different datasets.
 
 ### Instructions to run this repository
 
